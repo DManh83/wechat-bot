@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import { getEyunService } from "../../services/eyunService"
 import { processIncomingMessage, processIncomingGroupMessage } from "../../services/quoteService"
 import { saveContact } from "../../services/contactService"
-import { chatHistory } from "../../models"
+import { chatHistory, User } from "../../models"
 
 export const setWebhook = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -42,30 +42,43 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
         // Check if message is from a group (chatroom)
         const isGroupMessage = messageData.data?.fromGroup?.includes("@chatroom") || messageData.msgType === "GROUP_TEXT"
 
-        // Get bot's nickname from message content (for group @mentions) or from the message itself
-        const botNickName = extractBotNickName(messageData.data?.content || "", [""])
-        console.log("botNickName", botNickName)
+        const wId = messageData.data?.wId
+
+        // Get bot's actual nickname from users table
+        let botActualNickName: string | null = null
+        if (wId) {
+            const botUser = await User.findOne({ where: { wId } })
+            botActualNickName = botUser?.nickName || null
+            console.log("[Webhook] Bot actual nickName from DB:", botActualNickName)
+        }
+
+        // Get mentioned name from message content
+        const mentionedName = extractBotNickName(messageData.data?.content || "", [""])
+        console.log("mentionedName", mentionedName)
+
+        // Check if the mentioned name matches bot's actual nickname
+        const isBotMentioned = mentionedName && botActualNickName && mentionedName.toLowerCase() === botActualNickName.toLowerCase()
+
         if (isGroupMessage) {
             // Check if bot is mentioned in group message
-            if (!botNickName) {
-                console.log("[Webhook] Group message but bot not mentioned, skipping")
+            if (!isBotMentioned) {
+                console.log("[Webhook] Group message but bot not mentioned or mentioned name doesn't match bot nickname")
                 res.json({ code: "1000", message: "ok" })
                 return
             }
 
             // Extract actual message content (remove @mention part)
-            const actualContent = extractGroupMessageContent(messageData.data?.content || "", botNickName)
+            const actualContent = extractGroupMessageContent(messageData.data?.content || "", mentionedName)
             if (!actualContent.trim()) {
                 console.log("[Webhook] Group message has no content after removing mention")
                 res.json({ code: "1000", message: "ok" })
                 return
             }
 
-            console.log(`[Webhook] Group message mentioned bot (${botNickName}): ${actualContent}`)
+            console.log(`[Webhook] Group message mentioned bot (${mentionedName}): ${actualContent}`)
 
             const msgId = String(messageData.data.msgId)
             const fromWxId = messageData.data.fromUser
-            const wId = messageData.data.wId
             const fromGroup = messageData.data.fromGroup // This is the group ID for group messages
             console.log(messageData)
             const nickName = extractNickname(messageData.data.pushContent) || ""

@@ -1,6 +1,7 @@
 import { getEyunService } from "./eyunService"
 import { sendMessageToCoze } from "./cozeService"
 import { getOpenClawService } from "./openclawService"
+import { getContactByWxId } from "./contactService"
 import { chatHistory } from "../models"
 import { isWhitelisted } from "../config/whitelist"
 import { isBlacklisted } from "../config/blacklist"
@@ -23,6 +24,8 @@ interface IncomingGroupMessage {
     nickName: string
 }
 
+const ERROR_MESSAGE = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
+
 /**
  * Process incoming webhook message and auto-reply using Coze AI
  * NOTE: Duplicate check is done in webhookController before calling this
@@ -44,15 +47,19 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
         console.log(`[Quote] ${fromWxId} is blacklisted, skipping`)
         return
     }
+    // let chatHistoryEntry = null
+    let chatHistoryEntry = await chatHistory.findOne({ where: { msgId } })
+    if (!chatHistoryEntry) {
+        chatHistoryEntry = await chatHistory.create({
+            msgId,
+            wId,
+            fromWxId,
+            content,
+        })
+    }
 
     try {
         // Mark as pending before calling Coze
-        // await chatHistory.create({
-        //     msgId,
-        //     wcId: fromWxId,
-        //     fromWxId,
-        //     content,
-        // })
 
         let aiResponse: string | null = null
 
@@ -71,31 +78,30 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
             // Check if OpenClaw returned "No response"
             if (aiResponse === "No response from OpenClaw.") {
                 console.log("[Quote] OpenClaw returned no response, using error message")
-                const errorMessage = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
-                await eyun.sendText({ wId, wcId: fromWxId, content: errorMessage })
-                await chatHistory.create({ msgId, wId, fromWxId, content, reply: errorMessage })
+                await eyun.sendText({ wId, wcId: fromWxId, content: ERROR_MESSAGE })
+                await chatHistoryEntry.update({ reply: ERROR_MESSAGE })
             } else {
                 console.log(`[Quote] AI response: ${aiResponse}`)
                 await eyun.sendText({ wId, wcId: fromWxId, content: aiResponse })
                 console.log(`[Quote] Sent reply to ${fromWxId}: ${aiResponse}`)
-                await chatHistory.create({ msgId, wId, fromWxId, content, reply: aiResponse })
+                await chatHistoryEntry.update({ reply: aiResponse })
             }
         } else {
             console.log("[Quote] AI failed, notifying customer to retry")
-            const errorMessage = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
-            await chatHistory.create({ msgId, wId, fromWxId, content, reply: errorMessage })
+            await chatHistoryEntry.update({ reply: ERROR_MESSAGE })
         }
     } catch (error) {
         console.error(`[Quote] Failed to process message:`, error)
-        const errorMessage = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
         if (isWhitelisted(fromWxId)) {
             console.log(`[Quote] ${fromWxId} is in whitelist, sending error message to OpenClaw`)
         } else {
             console.log(`[Quote] ${fromWxId} is not in whitelist, sending error message to Coze`)
         }
         const eyun = getEyunService()
-        await eyun.sendText({ wId, wcId: fromWxId, content: errorMessage })
-        await chatHistory.create({ msgId, wId, fromWxId, content, reply: errorMessage })
+        await eyun.sendText({ wId, wcId: fromWxId, content: ERROR_MESSAGE })
+        if (chatHistoryEntry) {
+            await chatHistoryEntry.update({ reply: ERROR_MESSAGE })
+        }
     }
 }
 
@@ -119,6 +125,15 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
         return
     }
 
+    let chatHistoryEntry = await chatHistory.findOne({ where: { msgId } })
+    if (!chatHistoryEntry) {
+        chatHistoryEntry = await chatHistory.create({
+            msgId,
+            wId,
+            fromWxId,
+            content,
+        })
+    }
     try {
         let aiResponse: string | null = null
 
@@ -131,6 +146,10 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
             aiResponse = await sendMessageToCoze(content, fromWxId)
         }
 
+        // Get sender's nickname from contacts
+        const contact = await getContactByWxId(fromWxId)
+        const senderNickName = contact?.nickName || fromWxId
+
         if (aiResponse) {
             console.log(`[Quote] AI response: ${aiResponse}`)
             const eyun = getEyunService()
@@ -138,27 +157,32 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
             await eyun.sendText({
                 wId,
                 wcId: fromGroup,
-                content: aiResponse,
+                content: `@${senderNickName} ${aiResponse}`,
                 at: fromWxId,
             })
             console.log(`[Quote] Sent reply to group ${fromGroup}: ${aiResponse}`)
-            await chatHistory.create({ msgId, wId, fromWxId, content, reply: aiResponse })
+            if (chatHistoryEntry) {
+                await chatHistoryEntry.update({ reply: `@${senderNickName} ${aiResponse}` })
+            }
         } else {
             console.log("[Quote] AI failed, notifying customer to retry")
-            const errorMessage = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
-            await chatHistory.create({ msgId, wId, fromWxId, content, reply: errorMessage })
+            if (chatHistoryEntry) {
+                await chatHistoryEntry.update({ reply: `@${senderNickName} ${ERROR_MESSAGE}` })
+            }
         }
     } catch (error) {
         console.error(`[Quote] Failed to process group message:`, error)
-        const errorMessage = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
+
         const eyun = getEyunService()
         await eyun.sendText({
             wId,
             wcId: fromGroup,
-            content: errorMessage,
+            content: ERROR_MESSAGE,
             at: fromWxId,
         })
-        await chatHistory.create({ msgId, wId, fromWxId, content, reply: errorMessage })
+        if (chatHistoryEntry) {
+            await chatHistoryEntry.update({ reply: `@${fromWxId} ${ERROR_MESSAGE}` })
+        }
     }
 }
 
