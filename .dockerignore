@@ -1,0 +1,40 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build output
+dist
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Environment files (use .env.docker for Docker)
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
