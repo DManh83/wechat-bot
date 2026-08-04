@@ -5,7 +5,7 @@
 export const WCID_BLACKLIST: string[] = [
     // Example: "wxid_abc123",
     // Add more wcIds as needed
-    "wxid_ekofjru65keh21",
+    // "wxid_ekofjru65keh21",
     "weixin",
 ]
 
