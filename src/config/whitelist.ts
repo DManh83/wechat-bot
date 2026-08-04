@@ -6,6 +6,7 @@ export const WCID_WHITELIST: string[] = [
     // Example: "wxid_abc123",
     // Add more wcIds as needed
     "wxid_1nogz86qv4v622",
+    "wxid_ekofjru65keh21",
 ]
 
 /**
