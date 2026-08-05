@@ -137,7 +137,7 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
     }
     try {
         const openclaw = getOpenClawService()
-        const aiResponse = await openclaw.chatWithContext(fromGroup, content, nickName)
+        const aiResponse = await openclaw.chatWithContext(nickName, content, fromGroup)
         if (!isBotMentioned) {
             console.log(`[Quote] No mention of bot, skipping`)
             return
