@@ -136,7 +136,7 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
     }
     try {
         const openclaw = getOpenClawService()
-        const aiResponse = await openclaw.chatWithContext(nickName, content)
+        const aiResponse = await openclaw.chatWithContext(fromGroup, content)
 
         // Get sender's nickname from contacts
         const contact = await getContactByWxId(fromWxId)
