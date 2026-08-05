@@ -135,16 +135,8 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
         })
     }
     try {
-        let aiResponse: string | null = null
-
-        if (isWhitelisted(fromWxId)) {
-            console.log(`[Quote] ${fromWxId} is in whitelist, using OpenClaw`)
-            const openclaw = getOpenClawService()
-            aiResponse = await openclaw.chatWithContext(nickName, content)
-        } else {
-            console.log(`[Quote] ${fromWxId} is not in whitelist, using Coze`)
-            aiResponse = await sendMessageToCoze(content, fromWxId)
-        }
+        const openclaw = getOpenClawService()
+        const aiResponse = await openclaw.chatWithContext(nickName, content)
 
         // Get sender's nickname from contacts
         const contact = await getContactByWxId(fromWxId)

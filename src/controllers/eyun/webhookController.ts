@@ -92,14 +92,14 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
             }
 
             // Process group message with bot mention
-            // await processIncomingGroupMessage({
-            //     msgId,
-            //     fromWxId,
-            //     fromGroup,
-            //     content: actualContent,
-            //     wId,
-            //     nickName,
-            // })
+            await processIncomingGroupMessage({
+                msgId,
+                fromWxId,
+                fromGroup,
+                content: actualContent,
+                wId,
+                nickName,
+            })
 
             res.json({ code: "1000", message: "ok" })
             return
