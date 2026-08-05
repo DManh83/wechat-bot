@@ -6,7 +6,7 @@ const OPENCLAW_HTTP_URL = process.env.OPENCLAW_HTTP_URL || "https://openclaw.dad
 const OPENCLAW_TOKEN = process.env.OPENCLAW_TOKEN
 
 export interface OpenClawMessage {
-    role: "user" | "assistant" | "system"
+    role: string
     content: string
 }
 
@@ -58,12 +58,12 @@ class OpenClawService {
      * Uses x-openclaw-session-key header for session management
      * Each customer (wcId) has their own persistent conversation window on OpenClaw side
      */
-    async chatWithContext(nickName: string, content: string): Promise<string> {
-        const sessionKey = nickName
-        const userId = nickName
+    async chatWithContext(nickName: string, content: string, key: string): Promise<string> {
+        const sessionKey = key
+        const userId = key
 
         // Build messages for context
-        const messages: OpenClawMessage[] = [{ role: "user", content }]
+        const messages: OpenClawMessage[] = [{ role: nickName, content }]
 
         const response = await this.chatCompletion(sessionKey, userId, messages)
         return response

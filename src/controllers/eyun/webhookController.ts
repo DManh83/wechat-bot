@@ -57,18 +57,18 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
         console.log("mentionedName", mentionedName)
 
         // Check if the mentioned name matches bot's actual nickname
-        const isBotMentioned = mentionedName && botActualNickName && mentionedName.toLowerCase() === botActualNickName.toLowerCase()
+        const isBotMentioned = (mentionedName && botActualNickName && mentionedName.toLowerCase() === botActualNickName.toLowerCase()) || false
 
         if (isGroupMessage) {
             // Check if bot is mentioned in group message
             if (!isBotMentioned) {
                 console.log("[Webhook] Group message but bot not mentioned or mentioned name doesn't match bot nickname")
-                res.json({ code: "1000", message: "ok" })
-                return
+                // res.json({ code: "1000", message: "ok" })
+                // return
             }
 
             // Extract actual message content (remove @mention part)
-            const actualContent = extractGroupMessageContent(messageData.data?.content || "", mentionedName)
+            const actualContent = extractGroupMessageContent(messageData.data?.content || "", mentionedName || "")
             if (!actualContent.trim()) {
                 console.log("[Webhook] Group message has no content after removing mention")
                 res.json({ code: "1000", message: "ok" })
@@ -99,6 +99,7 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
                 content: actualContent,
                 wId,
                 nickName,
+                isBotMentioned,
             })
 
             res.json({ code: "1000", message: "ok" })
@@ -119,8 +120,8 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
             try {
                 const contact = await saveContact(wId, fromWxId)
                 // console.log("[Webhook] Contact", contact)
-                if (contact) {
-                    nickName = contact.nickName || nickName
+                if (contact?.nickName && !contact.nickName.startsWith("wxid_")) {
+                    nickName = contact.nickName
                 }
             } catch (err) {
                 console.log("[Webhook] Failed to get contact, using pushContent nickname")
@@ -163,6 +164,13 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
  */
 function extractNickname(pushContent: string | undefined): string | undefined {
     if (!pushContent) return undefined
+    // Format mới: "Nickname在群聊中@了你" hoặc " Nickname在群聊中@了你"
+    const match = pushContent.match(/^(.+?)在群聊中@了你/)
+    if (match) {
+        return match[1].trim()
+    }
+
+    // Format cũ: "Nickname : message"
     const parts = pushContent.split(" : ")
     return parts.length > 1 ? parts[0] : undefined
 }

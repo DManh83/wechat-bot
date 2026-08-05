@@ -22,6 +22,7 @@ interface IncomingGroupMessage {
     content: string
     wId: string
     nickName: string
+    isBotMentioned: boolean
 }
 
 const ERROR_MESSAGE = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
@@ -67,7 +68,7 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
             // User is in whitelist → use OpenClaw
             console.log(`[Quote] ${fromWxId} is in whitelist, using OpenClaw`)
             const openclaw = getOpenClawService()
-            aiResponse = await openclaw.chatWithContext(nickName, content)
+            aiResponse = await openclaw.chatWithContext(nickName, content, nickName)
         } else {
             // User is not in whitelist → use Coze
             console.log(`[Quote] ${fromWxId} is not in whitelist, using Coze`)
@@ -110,7 +111,7 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
  * Sends reply to group with @mention to the sender
  */
 export const processIncomingGroupMessage = async (message: IncomingGroupMessage): Promise<void> => {
-    const { msgId, fromWxId, fromGroup, content, wId, nickName } = message
+    const { msgId, fromWxId, fromGroup, content, wId, nickName, isBotMentioned } = message
 
     console.log(`[Quote] Processing group message from ${fromWxId} in ${fromGroup}: ${content}`)
 
@@ -136,11 +137,14 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
     }
     try {
         const openclaw = getOpenClawService()
-        const aiResponse = await openclaw.chatWithContext(fromGroup, content)
-
+        const aiResponse = await openclaw.chatWithContext(fromGroup, content, nickName)
+        if (!isBotMentioned) {
+            console.log(`[Quote] No mention of bot, skipping`)
+            return
+        }
         // Get sender's nickname from contacts
         const contact = await getContactByWxId(fromWxId)
-        const senderNickName = contact?.nickName || fromWxId
+        const senderNickName = contact?.nickName || nickName
 
         if (aiResponse) {
             console.log(`[Quote] AI response: ${aiResponse}`)
