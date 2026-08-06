@@ -49,7 +49,7 @@ class OpenClawService {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${OPENCLAW_TOKEN}`,
             },
-            timeout: 3000000, // 180s timeout for AI responses
+            timeout: 5000000, // 180s timeout for AI responses
         })
     }
 
@@ -96,7 +96,7 @@ class OpenClawService {
             headers["x-openclaw-session-key"] = sessionKey
 
             const response = await this.client.post<OpenClawResponse>("/v1/responses", requestBody, { headers })
-
+            console.log("OpenClaw response:", response.data)
             if (response.status !== 200) {
                 throw new Error(`OpenClaw API Error: HTTP ${response.status}`)
             }
@@ -127,17 +127,21 @@ class OpenClawService {
 
             return content
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const status = error.response?.status
-                const data = error.response?.data
-                if (status === 401) {
-                    throw new Error("OpenClaw authentication failed. Check your token.")
-                }
-                if (status === 404) {
-                    throw new Error("OpenClaw API not found. Check your OPENCLAW_HTTP_URL.")
-                }
-                throw new Error(`OpenClaw API error: ${data?.error || error.message}`)
-            }
+            // if (axios.isAxiosError(error)) {
+            //     const status = error.response?.status
+            //     const data = error.response?.data
+            //     if (status === 401) {
+            //         throw new Error("OpenClaw authentication failed. Check your token.")
+            //     }
+            //     if (status === 404) {
+            //         throw new Error("OpenClaw API not found. Check your OPENCLAW_HTTP_URL.")
+            //     }
+            //     const errorMsg = typeof data?.error === "object"
+            //         ? data.error?.message || JSON.stringify(data.error)
+            //         : data?.error || error.message
+            //     throw new Error(`OpenClaw API error: ${errorMsg}`)
+            // }
+            console.error("OpenClaw API error:", error)
             throw error
         }
     }

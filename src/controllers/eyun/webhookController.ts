@@ -57,7 +57,11 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
         console.log("mentionedName", mentionedName)
 
         // Check if the mentioned name matches bot's actual nickname
-        const isBotMentioned = (mentionedName && botActualNickName && mentionedName.toLowerCase() === botActualNickName.toLowerCase()) || false
+        const isBotMentioned =
+            (mentionedName &&
+                botActualNickName &&
+                (mentionedName.toLowerCase() === botActualNickName.toLowerCase() || mentionedName.toLowerCase() === "fandy")) ||
+            false
 
         if (isGroupMessage) {
             // Check if bot is mentioned in group message
@@ -80,7 +84,7 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
             const msgId = String(messageData.data.msgId)
             const fromWxId = messageData.data.fromUser
             const fromGroup = messageData.data.fromGroup // This is the group ID for group messages
-            console.log(messageData)
+            console.log(messageData.data)
             const nickName = extractNickname(messageData.data.pushContent) || ""
 
             // Check duplicate by msgId

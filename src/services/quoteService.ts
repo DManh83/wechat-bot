@@ -25,7 +25,7 @@ interface IncomingGroupMessage {
     isBotMentioned: boolean
 }
 
-const ERROR_MESSAGE = "Sorry, the system is busy. Please try again in a few seconds. Thank you!"
+const ERROR_MESSAGE = "抱歉，系统正在忙碌，请稍后再试。谢谢！"
 
 /**
  * Process incoming webhook message and auto-reply using Coze AI
@@ -113,8 +113,6 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
 export const processIncomingGroupMessage = async (message: IncomingGroupMessage): Promise<void> => {
     const { msgId, fromWxId, fromGroup, content, wId, nickName, isBotMentioned } = message
 
-    console.log(`[Quote] Processing group message from ${fromWxId} in ${fromGroup}: ${content}`)
-
     if (!wId) {
         console.log("[Quote] No wId provided in webhook")
         return
@@ -142,6 +140,8 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
             console.log(`[Quote] No mention of bot, skipping`)
             return
         }
+        console.log(`[Quote] Processing group message from ${fromWxId} in ${fromGroup}: ${content}`)
+
         // Get sender's nickname from contacts
         const contact = await getContactByWxId(fromWxId)
         const senderNickName = contact?.nickName || nickName
