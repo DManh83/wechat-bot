@@ -100,6 +100,7 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
         }
         const eyun = getEyunService()
         await eyun.sendText({ wId, wcId: fromWxId, content: ERROR_MESSAGE })
+        console.log(`[Quote] Sent error message to ${fromWxId} - ${msgId}: ${ERROR_MESSAGE}`)
         if (chatHistoryEntry) {
             await chatHistoryEntry.update({ reply: ERROR_MESSAGE })
         }
@@ -176,6 +177,8 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
             content: ERROR_MESSAGE,
             at: fromWxId,
         })
+        console.log(`[Quote] Sent error message to ${fromGroup} - ${msgId}: ${ERROR_MESSAGE}`)
+
         if (chatHistoryEntry) {
             await chatHistoryEntry.update({ reply: `@${fromWxId} ${ERROR_MESSAGE}` })
         }
