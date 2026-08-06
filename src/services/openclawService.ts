@@ -49,7 +49,7 @@ class OpenClawService {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${OPENCLAW_TOKEN}`,
             },
-            timeout: 5000000, // 5 minutes timeout for AI responses
+            timeout: 600000, // 10 minutes timeout for AI responses
         })
     }
 

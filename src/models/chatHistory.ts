@@ -5,7 +5,7 @@ interface chatHistoryAttributes {
     id: number
     msgId: string
     wId: string
-    fromWxId: string
+    fromWxId: string | null
     content: string
     reply: string | null
     createdAt?: Date
@@ -34,7 +34,7 @@ chatHistory.init(
         },
         fromWxId: {
             type: DataTypes.STRING(255),
-            allowNull: false,
+            allowNull: true,
         },
         content: {
             type: DataTypes.TEXT,

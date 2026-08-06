@@ -190,6 +190,7 @@ export interface AcceptUserRequest {
     wId: string
     v1: string
     v2: string
+    type: number
 }
 
 export interface DelContactRequest {
