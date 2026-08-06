@@ -49,7 +49,7 @@ class OpenClawService {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${OPENCLAW_TOKEN}`,
             },
-            timeout: 5000000, // 180s timeout for AI responses
+            timeout: 5000000, // 5 minutes timeout for AI responses
         })
     }
 
@@ -127,21 +127,27 @@ class OpenClawService {
 
             return content
         } catch (error) {
-            // if (axios.isAxiosError(error)) {
-            //     const status = error.response?.status
-            //     const data = error.response?.data
-            //     if (status === 401) {
-            //         throw new Error("OpenClaw authentication failed. Check your token.")
-            //     }
-            //     if (status === 404) {
-            //         throw new Error("OpenClaw API not found. Check your OPENCLAW_HTTP_URL.")
-            //     }
-            //     const errorMsg = typeof data?.error === "object"
-            //         ? data.error?.message || JSON.stringify(data.error)
-            //         : data?.error || error.message
-            //     throw new Error(`OpenClaw API error: ${errorMsg}`)
-            // }
-            console.error("OpenClaw API error:", error)
+            if (axios.isAxiosError(error)) {
+                const status = error.response?.status
+                const data = error.response?.data
+                // Check if API returned a failure status in body (HTTP 200 but status=failed)
+                if (data?.status === "failed") {
+                    const errorDetail =
+                        typeof data?.error === "object" ? data.error?.message || JSON.stringify(data.error) : data?.error || "Unknown error"
+                    throw new Error(`OpenClaw API failed: ${errorDetail}`)
+                }
+                if (status === 401) {
+                    throw new Error("OpenClaw authentication failed. Check your token.")
+                }
+                if (status === 404) {
+                    throw new Error("OpenClaw API not found. Check your OPENCLAW_HTTP_URL.")
+                }
+                if (status != null) {
+                    const errorDetail =
+                        typeof data?.error === "object" ? data.error?.message || JSON.stringify(data.error) : data?.error || error.message
+                    throw new Error(`OpenClaw API error (HTTP ${status}): ${errorDetail}`)
+                }
+            }
             throw error
         }
     }
