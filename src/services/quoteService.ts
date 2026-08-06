@@ -170,18 +170,25 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
     } catch (error) {
         console.error(`[Quote] Failed to process group message:`, error)
 
-        const eyun = getEyunService()
-        await eyun.sendText({
-            wId,
-            wcId: fromGroup,
-            content: ERROR_MESSAGE,
-            at: fromWxId,
-        })
-        console.log(`[Quote] Sent error message to ${fromGroup} - ${msgId}: ${ERROR_MESSAGE}`)
+        if (isBotMentioned) {
+            const eyun = getEyunService()
+            try {
+                await eyun.sendText({
+                    wId,
+                    wcId: fromGroup,
+                    content: ERROR_MESSAGE,
+                    at: fromWxId,
+                })
+                console.log(`[Quote] Sent error message to ${fromGroup} - ${msgId}: ${ERROR_MESSAGE}`)
+            } catch (sendError) {
+                console.error(`[Quote] Failed to send error message:`, sendError)
+            }
+        } else {
+            console.log(`[Quote] No mention of bot, skipping`)
+        }
 
         if (chatHistoryEntry) {
-            await chatHistoryEntry.update({ reply: `@${fromWxId} ${ERROR_MESSAGE}` })
+            await chatHistoryEntry.update({ reply: ERROR_MESSAGE })
         }
     }
 }
-
