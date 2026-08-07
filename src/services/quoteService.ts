@@ -118,6 +118,10 @@ export const processIncomingGroupMessage = async (message: IncomingGroupMessage)
         console.log("[Quote] No wId provided in webhook")
         return
     }
+    if (!msgId || !content) {
+        console.log("[Quote] No msgId or content provided in webhook")
+        return
+    }
 
     // Skip blacklisted users
     if (isBlacklisted(fromWxId)) {
