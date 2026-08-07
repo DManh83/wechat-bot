@@ -43,6 +43,11 @@ export const processIncomingMessage = async (message: IncomingMessage): Promise<
         return
     }
 
+    if (!msgId || !content) {
+        console.log("[Quote] No msgId or content provided in webhook")
+        return
+    }
+
     // Skip blacklisted users
     if (isBlacklisted(fromWxId)) {
         console.log(`[Quote] ${fromWxId} is blacklisted, skipping`)

@@ -118,14 +118,13 @@ export const webhookCallback = async (req: Request, res: Response): Promise<void
             const fromWxId = messageData.data.fromUser
             const content = messageData.data.content
             const wId = messageData.data.wId
-            const msgType = messageData.messageType === "60001" ? 1 : 0
             let nickName = extractNickname(messageData.data.pushContent)
 
             // Get contact info and save user to database
             try {
                 const contact = await saveContact(wId, fromWxId)
                 // console.log("[Webhook] Contact", contact)
-                if (contact?.nickName && !contact.nickName.startsWith("wxid_")) {
+                if (contact && contact?.nickName && !contact.nickName.startsWith("wxid_")) {
                     nickName = contact.nickName
                 }
             } catch (err) {
